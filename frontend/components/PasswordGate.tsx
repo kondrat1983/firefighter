@@ -4,24 +4,22 @@ import { useState, useEffect, ReactNode } from 'react';
 import { Flame, Lock, Eye, EyeOff } from 'lucide-react';
 import WelcomeModal from './WelcomeModal';
 
-const STORAGE_KEY        = 'ff_demo_access';
-const WELCOME_SEEN_KEY   = 'ff_welcome_seen';
-const CORRECT_PASSWORD   = 'firefighter2026';
+const STORAGE_KEY      = 'ff_demo_access';
+const CORRECT_PASSWORD = 'firefighter2026';
 
 export default function PasswordGate({ children }: { children: ReactNode }) {
-  const [unlocked, setUnlocked]           = useState<boolean | null>(null);
-  const [showWelcome, setShowWelcome]     = useState(false);
-  const [input, setInput]                 = useState('');
-  const [error, setError]                 = useState('');
-  const [showPassword, setShowPassword]   = useState(false);
+  const [unlocked, setUnlocked]         = useState<boolean | null>(null);
+  const [showWelcome, setShowWelcome]   = useState(false);
+  const [input, setInput]               = useState('');
+  const [error, setError]               = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    setUnlocked(stored === 'true');
-    // If already unlocked but welcome not seen yet, show it
-    if (stored === 'true' && !localStorage.getItem(WELCOME_SEEN_KEY)) {
-      setShowWelcome(true);
-    }
+    const isUnlocked = stored === 'true';
+    setUnlocked(isUnlocked);
+    // Show welcome every time the page loads if already unlocked
+    if (isUnlocked) setShowWelcome(true);
   }, []);
 
   function handleSubmit(e: React.FormEvent) {
@@ -29,10 +27,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     if (input === CORRECT_PASSWORD) {
       localStorage.setItem(STORAGE_KEY, 'true');
       setUnlocked(true);
-      // Show welcome modal only on first-ever login
-      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
-        setShowWelcome(true);
-      }
+      setShowWelcome(true); // always show on login
     } else {
       setError('Wrong password. Try again.');
       setInput('');
@@ -40,19 +35,14 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     }
   }
 
-  function closeWelcome() {
-    localStorage.setItem(WELCOME_SEEN_KEY, 'true');
-    setShowWelcome(false);
-  }
-
   // Still hydrating
   if (unlocked === null) return null;
 
-  // Unlocked — render app + optional welcome modal
+  // Unlocked — render app + welcome modal on every visit
   if (unlocked) {
     return (
       <>
-        {showWelcome && <WelcomeModal onClose={closeWelcome} />}
+        {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}
         {children}
       </>
     );
@@ -62,7 +52,6 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        {/* Logo / header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/30 mb-4">
             <Flame className="h-8 w-8 text-primary" />
@@ -71,7 +60,6 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
           <p className="text-sm text-foreground-muted">Demo access · QA Feedback</p>
         </div>
 
-        {/* Card */}
         <div className="mission-control-panel">
           <div className="flex items-center gap-2 mb-4 text-foreground-secondary">
             <Lock className="h-4 w-4" />
@@ -98,9 +86,7 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
               </button>
             </div>
 
-            {error && (
-              <p className="text-xs text-red-400 -mt-1">{error}</p>
-            )}
+            {error && <p className="text-xs text-red-400 -mt-1">{error}</p>}
 
             <button
               type="submit"
