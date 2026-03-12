@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Activity, AlertTriangle, Clock } from 'lucide-react';
 import { demoFetch } from '@/lib/demoFetch';
+import AlertsModal from '@/components/AlertsModal';
 
 // API Types
 interface Game {
@@ -204,99 +205,136 @@ function GameWidget({ game }: { game: any }) {
 }
 
 
+// ── Alert type config ────────────────────────────────────
+const ALERT_TYPE_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+  crash:        { label: 'CRSH', bg: 'bg-red-500/20',    text: 'text-red-400',    dot: 'bg-red-400' },
+  progression:  { label: 'PROG', bg: 'bg-amber-500/20',  text: 'text-amber-400',  dot: 'bg-amber-400' },
+  connectivity: { label: 'CONN', bg: 'bg-blue-500/20',   text: 'text-blue-400',   dot: 'bg-blue-400' },
+  sentiment:    { label: 'SENT', bg: 'bg-purple-500/20', text: 'text-purple-400', dot: 'bg-purple-400' },
+};
+const defaultAlertCfg = { label: 'ALRT', bg: 'bg-primary/20', text: 'text-primary', dot: 'bg-primary' };
+const getAlertTypeCfg = (t: string) => ALERT_TYPE_CFG[t?.toLowerCase()] ?? defaultAlertCfg;
+
 function AlertsPanel() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts]       = useState<Alert[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    const loadAlerts = async () => {
-      setLoading(true);
+    const load = async () => {
       const data = await api.fetchAlerts();
       setAlerts(data);
-      setLoading(false);
     };
-
-    loadAlerts();
-    
-    // Refresh alerts every 30 seconds
-    const interval = setInterval(loadAlerts, 30000);
-    return () => clearInterval(interval);
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
   }, []);
 
+  // Show top 8 by confidence
+  const topAlerts = [...alerts]
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 8);
+
   return (
-    <div className="mission-control-panel">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-shadow flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-status-new" />
-          Live Alerts
-        </h2>
-        <div className="text-sm text-foreground-secondary">
-          {alerts.length} active
+    <>
+      <div className="mission-control-panel h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <h2 className="text-xl font-bold text-shadow flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-status-new" />
+            Live Alerts
+          </h2>
+          <div className="text-sm text-foreground-secondary">
+            {alerts.length} active
+          </div>
         </div>
-      </div>
-      
-      {alerts.length === 0 ? (
-        <div className="text-center py-8 text-foreground-secondary">
-          No active alerts - All systems nominal
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {alerts.map((alert) => (
-            <div key={alert.id} className={`alert-card ${alert.status === 'new' ? 'alert-glow' : ''} hover:border-primary/50 transition-all`}>
-              <div className="flex items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`status-indicator flex-shrink-0 ${
-                      alert.status === 'new' ? 'bg-status-new' :
-                      alert.status === 'investigating' ? 'bg-status-investigating' :
-                      'bg-status-confirmed'
-                    } text-white`}>
-                      {alert.status.toUpperCase()}
+
+        {/* Compact rows */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {alerts.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-foreground-secondary text-sm">
+              No active alerts · All systems nominal
+            </div>
+          ) : (
+            <div className="space-y-0.5 max-h-96 overflow-y-auto custom-scrollbar">
+              {topAlerts.map((alert) => {
+                const cfg = getAlertTypeCfg(alert.type);
+                return (
+                  <div
+                    key={alert.id}
+                    className="group flex items-center gap-2 px-2 py-2 rounded-md hover:bg-background-tertiary transition-colors cursor-default"
+                  >
+                    {/* Severity dot */}
+                    <div className={`flex-shrink-0 w-1.5 h-1.5 rounded-full ${cfg.dot} ${
+                      alert.status === 'new' ? 'animate-pulse' : ''
+                    }`} />
+
+                    {/* Type badge */}
+                    <span className={`flex-shrink-0 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.text}`}>
+                      {cfg.label}
                     </span>
-                    <span className="text-xs text-foreground-secondary whitespace-nowrap">
-                      #{alert.id} • {alert.type.toUpperCase()}
-                    </span>
-                    <div className="flex gap-1">
-                      {alert.sources.map(source => (
-                        <div key={source} className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          source === 'reddit' ? 'bg-source-reddit' :
-                          source === 'steam' ? 'bg-blue-500' :
-                          source === 'twitter' ? 'bg-source-twitter' :
-                          'bg-gray-500'
-                        }`} title={source} />
-                      ))}
+
+                    {/* Title + game */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-foreground truncate leading-tight">
+                        {alert.title}
+                      </div>
+                      {alert.game && (
+                        <div className="text-[10px] text-foreground-muted truncate leading-tight">
+                          {alert.game}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-sm font-medium mb-0.5 text-foreground leading-snug">
-                    {alert.title}
-                  </div>
-                  {alert.game && (
-                    <div className="text-xs text-foreground-muted mb-1">{alert.game}</div>
-                  )}
-                  <div className="flex items-center gap-3 text-xs text-foreground-secondary flex-wrap">
-                    <span>{alert.mention_count} mentions</span>
-                    <span className={`font-medium ${
+
+                    {/* Confidence */}
+                    <span className={`flex-shrink-0 text-[10px] font-mono ${
                       alert.confidence > 0.8 ? 'text-risk-low' :
                       alert.confidence > 0.6 ? 'text-risk-medium' : 'text-risk-high'
                     }`}>
-                      {Math.round(alert.confidence * 100)}% confidence
+                      {Math.round(alert.confidence * 100)}%
                     </span>
+
+                    {/* Investigate arrow — appears on hover */}
+                    <Link
+                      href={`/alerts/${alert.id}`}
+                      className="flex-shrink-0 text-[11px] text-primary hover:text-primary-light opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-medium"
+                    >
+                      →
+                    </Link>
                   </div>
-                </div>
-                <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                  <div className="text-xs text-foreground-muted whitespace-nowrap" suppressHydrationWarning>
-                    {new Date(alert.triggered_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-                  </div>
-                  <Link href={`/alerts/${alert.id}`} className="text-xs text-primary hover:text-primary-light whitespace-nowrap">
-                    Investigate →
-                  </Link>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
+
+        {/* View all footer */}
+        {alerts.length > 8 && (
+          <div className="flex-shrink-0 pt-3 mt-2 border-t border-border">
+            <button
+              onClick={() => setModalOpen(true)}
+              className="w-full text-xs text-primary hover:text-primary-light transition-colors py-1 flex items-center justify-center gap-1"
+            >
+              View all {alerts.length} alerts →
+            </button>
+          </div>
+        )}
+        {alerts.length > 0 && alerts.length <= 8 && (
+          <div className="flex-shrink-0 pt-3 mt-2 border-t border-border">
+            <button
+              onClick={() => setModalOpen(true)}
+              className="w-full text-xs text-foreground-muted hover:text-primary transition-colors py-1 flex items-center justify-center gap-1"
+            >
+              View details ↗
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {modalOpen && (
+        <AlertsModal alerts={alerts} onClose={() => setModalOpen(false)} />
       )}
-    </div>
+    </>
   );
 }
 
