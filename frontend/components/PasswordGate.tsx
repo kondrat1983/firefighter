@@ -2,19 +2,26 @@
 
 import { useState, useEffect, ReactNode } from 'react';
 import { Flame, Lock, Eye, EyeOff } from 'lucide-react';
+import WelcomeModal from './WelcomeModal';
 
-const STORAGE_KEY = 'ff_demo_access';
-const CORRECT_PASSWORD = 'firefighter2026';
+const STORAGE_KEY        = 'ff_demo_access';
+const WELCOME_SEEN_KEY   = 'ff_welcome_seen';
+const CORRECT_PASSWORD   = 'firefighter2026';
 
 export default function PasswordGate({ children }: { children: ReactNode }) {
-  const [unlocked, setUnlocked] = useState<boolean | null>(null); // null = loading
-  const [input, setInput] = useState('');
-  const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [unlocked, setUnlocked]           = useState<boolean | null>(null);
+  const [showWelcome, setShowWelcome]     = useState(false);
+  const [input, setInput]                 = useState('');
+  const [error, setError]                 = useState('');
+  const [showPassword, setShowPassword]   = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     setUnlocked(stored === 'true');
+    // If already unlocked but welcome not seen yet, show it
+    if (stored === 'true' && !localStorage.getItem(WELCOME_SEEN_KEY)) {
+      setShowWelcome(true);
+    }
   }, []);
 
   function handleSubmit(e: React.FormEvent) {
@@ -22,6 +29,10 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     if (input === CORRECT_PASSWORD) {
       localStorage.setItem(STORAGE_KEY, 'true');
       setUnlocked(true);
+      // Show welcome modal only on first-ever login
+      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
+        setShowWelcome(true);
+      }
     } else {
       setError('Wrong password. Try again.');
       setInput('');
@@ -29,11 +40,23 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     }
   }
 
-  // Still checking localStorage
+  function closeWelcome() {
+    localStorage.setItem(WELCOME_SEEN_KEY, 'true');
+    setShowWelcome(false);
+  }
+
+  // Still hydrating
   if (unlocked === null) return null;
 
-  // App unlocked — render normally
-  if (unlocked) return <>{children}</>;
+  // Unlocked — render app + optional welcome modal
+  if (unlocked) {
+    return (
+      <>
+        {showWelcome && <WelcomeModal onClose={closeWelcome} />}
+        {children}
+      </>
+    );
+  }
 
   // Lock screen
   return (

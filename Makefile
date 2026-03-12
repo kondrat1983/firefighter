@@ -1,11 +1,15 @@
 # Firefighter Development Commands
 
-.PHONY: help setup start stop logs clean test migrate seed reset
+.PHONY: help setup start stop logs clean test migrate seed reset deploy deploy-skip-data
 
 # Default target
 help:
 	@echo "🔥 Firefighter Development Commands"
 	@echo "=================================="
+	@echo ""
+	@echo "Deploy:"
+	@echo "  make deploy            - Refresh data, build, commit & push to GitHub Pages"
+	@echo "  make deploy-skip-data  - Deploy without refreshing demo data (faster)"
 	@echo ""
 	@echo "Setup & Environment:"
 	@echo "  make setup     - Initial setup (run once)"
@@ -125,3 +129,9 @@ dev: stop start logs
 build:
 	@echo "🏗️  Building production images..."
 	docker compose build --no-cache
+# ── GitHub Pages Deploy ──────────────────────
+deploy:
+	@./scripts/deploy.sh
+
+deploy-skip-data:
+	@./scripts/deploy.sh --skip-data

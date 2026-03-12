@@ -50,7 +50,19 @@
       "Bash(cp /Users/yuriykondratsky/firefighter/frontend/app/games/[id]/page.tsx /Users/yuriykondratsky/firefighter/frontend/app/games/[id]/GameDetailClient.tsx)",
       "Bash(cp /Users/yuriykondratsky/firefighter/frontend/app/alerts/[id]/page.tsx /Users/yuriykondratsky/firefighter/frontend/app/alerts/[id]/AlertDetailClient.tsx)",
       "Bash(cat /Users/yuriykondratsky/firefighter/frontend/app/games/[id]/page.tsx)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh run:*)",
+      "Bash(git -C /Users/yuriykondratsky/firefighter ls-files frontend/lib/)",
+      "Bash(git add:*)",
+      "Bash(git -C /Users/yuriykondratsky/firefighter commit -m \"Fix: add frontend/lib to git \\(was excluded by gitignore\\)\")",
+      "Bash(git -C /Users/yuriykondratsky/firefighter push)",
+      "Bash(git -C /Users/yuriykondratsky/firefighter add reports/)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(/Users/yuriykondratsky/firefighter/Makefile:*)",
+      "Bash(NEXT_PUBLIC_BASE_PATH=/firefighter npm run build)"
     ],
     "deny": [],
     "ask": []
