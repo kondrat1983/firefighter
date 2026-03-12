@@ -62,7 +62,8 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(/Users/yuriykondratsky/firefighter/Makefile:*)",
-      "Bash(NEXT_PUBLIC_BASE_PATH=/firefighter npm run build)"
+      "Bash(NEXT_PUBLIC_BASE_PATH=/firefighter npm run build)",
+      "Bash(grep -v \"^$\")"
     ],
     "deny": [],
     "ask": []

@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Activity, AlertTriangle, Clock } from 'lucide-react';
+import { Activity, AlertTriangle, Clock, Plus } from 'lucide-react';
 import { demoFetch } from '@/lib/demoFetch';
 import AlertsModal from '@/components/AlertsModal';
+import AddGameModal, { CustomGame } from '@/components/AddGameModal';
+
+const CUSTOM_GAMES_KEY = 'ff_custom_games';
 
 // API Types
 interface Game {
@@ -204,6 +207,129 @@ function GameWidget({ game }: { game: any }) {
   );
 }
 
+// ── Custom game widget (user-added, with initializing animation) ──────────
+function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id: string) => void }) {
+  const [phase, setPhase]       = useState<CustomGame['phase']>(game.phase);
+  const [health, setHealth]     = useState(game.health_score);
+  const [signals, setSignals]   = useState(game.signals_today);
+
+  useEffect(() => {
+    if (phase === 'initializing') {
+      const t1 = setTimeout(() => setPhase('scanning'), 1800);
+      return () => clearTimeout(t1);
+    }
+    if (phase === 'scanning') {
+      const t2 = setTimeout(() => {
+        setPhase('monitoring');
+        setHealth(Math.floor(Math.random() * 20) + 78); // 78–97
+        setSignals(Math.floor(Math.random() * 120) + 20);
+      }, 2200);
+      return () => clearTimeout(t2);
+    }
+  }, [phase]);
+
+  const isReady = phase === 'monitoring';
+
+  return (
+    <div className="game-widget relative group border border-primary/30 hover:border-primary/60 hover:scale-[1.01] transition-all duration-150">
+      {/* Remove button */}
+      <button
+        onClick={() => onRemove(game.id)}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-foreground-muted hover:text-risk-high p-0.5 rounded z-10"
+        title="Remove game"
+      >
+        ✕
+      </button>
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4 pr-5">
+        <div>
+          <h3 className="text-lg font-bold text-foreground mb-1">{game.name}</h3>
+          <div className={`status-text ${
+            phase === 'initializing' ? 'text-risk-medium' :
+            phase === 'scanning'     ? 'text-primary' :
+                                       'text-risk-low'
+          }`}>
+            {phase === 'initializing' ? 'INITIALIZING…' :
+             phase === 'scanning'     ? 'SCANNING…' :
+                                        'ONLINE'}
+          </div>
+        </div>
+
+        {/* Health ring or spinner */}
+        <div className={`health-radar ${
+          !isReady                  ? 'border-primary/40 text-primary' :
+          health >= 90              ? 'text-risk-low border-risk-low' :
+          health >= 70              ? 'text-risk-medium border-risk-medium' :
+                                      'text-risk-high border-risk-high'
+        }`}>
+          {!isReady ? (
+            <span className="relative z-10 text-xs animate-pulse">···</span>
+          ) : (
+            <span className="relative z-10 text-sm">{health}%</span>
+          )}
+        </div>
+      </div>
+
+      {/* Progress / stats */}
+      {!isReady ? (
+        <div className="space-y-2">
+          <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full bg-primary transition-all duration-1000 ${
+                phase === 'initializing' ? 'w-1/3' : 'w-2/3'
+              }`}
+            />
+          </div>
+          <p className="text-xs text-foreground-muted">
+            {phase === 'initializing'
+              ? 'Connecting to data sources…'
+              : `Scanning ${game.platform} reviews & community feeds…`}
+          </p>
+          <p className="text-[10px] text-foreground-muted font-mono">
+            {game.platform} · App {game.app_id}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="status-dot bg-risk-low"></div>
+              <span className="status-text text-foreground">0 ALERTS</span>
+            </div>
+            <div className="flex-1 h-px bg-border opacity-50"></div>
+            <div className="status-text text-foreground-secondary animate-data-flow">
+              {signals} SIG
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-foreground-secondary">CRASH</div>
+              <div className="font-mono text-risk-low">0%</div>
+            </div>
+            <div className="text-center">
+              <div className="text-foreground-secondary">PROG</div>
+              <div className="font-mono text-risk-low">0%</div>
+            </div>
+            <div className="text-center">
+              <div className="text-foreground-secondary">CONN</div>
+              <div className="font-mono text-risk-low">0%</div>
+            </div>
+            <div className="text-center">
+              <div className="text-foreground-secondary">SENT</div>
+              <div className="font-mono text-risk-low">—</div>
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-border">
+            <p className="text-[10px] text-foreground-muted font-mono">
+              {game.platform} · App {game.app_id} · added just now
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // ── Alert type config ────────────────────────────────────
 const ALERT_TYPE_CFG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -798,10 +924,36 @@ function SocialMediaFeedsPanel() {
 
 
 export default function Dashboard() {
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [apiStatus, setApiStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+  const [currentTime, setCurrentTime]   = useState<Date | null>(null);
+  const [games, setGames]               = useState<Game[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [apiStatus, setApiStatus]       = useState<'connecting' | 'connected' | 'error'>('connecting');
+  const [customGames, setCustomGames]   = useState<CustomGame[]>([]);
+  const [showAddGame, setShowAddGame]   = useState(false);
+
+  // Load custom games from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CUSTOM_GAMES_KEY);
+      if (stored) setCustomGames(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  function handleAddGame(game: CustomGame) {
+    setCustomGames(prev => {
+      const updated = [...prev, game];
+      localStorage.setItem(CUSTOM_GAMES_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }
+
+  function handleRemoveGame(id: string) {
+    setCustomGames(prev => {
+      const updated = prev.filter(g => g.id !== id);
+      localStorage.setItem(CUSTOM_GAMES_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }
 
   useEffect(() => {
     // Set initial time on client
@@ -850,9 +1002,6 @@ export default function Dashboard() {
             <nav className="flex gap-4">
               <Link href="/" className="text-sm text-primary hover:text-primary-light transition-colors">
                 Dashboard
-              </Link>
-              <Link href="/games" className="text-sm text-foreground-secondary hover:text-primary transition-colors">
-                Games
               </Link>
               <Link href="/alerts" className="text-sm text-foreground-secondary hover:text-primary transition-colors">
                 Alerts
@@ -906,14 +1055,24 @@ export default function Dashboard() {
               <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
               <h2 className="text-xl font-bold text-shadow text-foreground">THREAT ASSESSMENT GRID</h2>
               <div className="flex-1 border-gradient"></div>
-              <div className="text-xs font-mono text-primary">
-                {games.filter(g => g.monitoring_active).length}/{games.length} ONLINE
+              <div className="text-xs font-mono text-primary mr-2">
+                {games.filter(g => g.monitoring_active).length + customGames.length}/{games.length + customGames.length} ONLINE
               </div>
+              <button
+                onClick={() => setShowAddGame(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-primary/40 bg-primary/10 hover:bg-primary/20 hover:border-primary/70 text-primary text-xs font-medium transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add game
+              </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {games.map((game) => (
                 <GameWidget key={game.id} game={game} />
+              ))}
+              {customGames.map((game) => (
+                <CustomGameWidget key={game.id} game={game} onRemove={handleRemoveGame} />
               ))}
             </div>
           </div>
@@ -953,6 +1112,14 @@ export default function Dashboard() {
           </span>
         </div>
       </footer>
+
+      {/* Add Game Modal */}
+      {showAddGame && (
+        <AddGameModal
+          onAdd={handleAddGame}
+          onClose={() => setShowAddGame(false)}
+        />
+      )}
     </div>
   );
 }
