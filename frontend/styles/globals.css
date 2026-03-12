@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  /* Mission Control UI Components */
+  .mission-control-panel {
+    @apply bg-background-secondary border border-border rounded-lg p-6 shadow-lg;
+    background: linear-gradient(135deg, rgba(15, 20, 25, 0.8) 0%, rgba(10, 11, 13, 0.9) 100%);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* DEFCON-style Game Widgets */
+  .game-widget {
+    @apply relative bg-background-secondary border rounded-lg p-4 cursor-pointer transition-all duration-300;
+    background: linear-gradient(145deg, rgba(15, 20, 25, 0.9), rgba(26, 32, 44, 0.8));
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    box-shadow: 
+      0 0 20px rgba(14, 165, 233, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .game-widget:hover {
+    border-color: rgba(14, 165, 233, 0.6);
+    box-shadow: 
+      0 0 30px rgba(14, 165, 233, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .game-widget.status-critical {
+    border-color: rgba(239, 68, 68, 0.6);
+    animation: critical-pulse 2s infinite;
+  }
+  
+  .game-widget.status-warning {
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+  
+  .game-widget.status-healthy {
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  
+  .game-widget.status-offline {
+    border-color: rgba(107, 114, 128, 0.3);
+    opacity: 0.6;
+  }
+  
+  /* Radar-style health indicator */
+  .health-radar {
+    @apply relative w-16 h-16 rounded-full border-2 flex items-center justify-center font-bold;
+    background: radial-gradient(circle at 30% 30%, rgba(14, 165, 233, 0.1), transparent 70%);
+    position: relative;
+  }
+  
+  .health-radar::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: linear-gradient(45deg, currentColor, transparent) border-box;
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+  
+  /* Scanning animation */
+  .scanning-line {
+    @apply absolute inset-0 rounded-full;
+    background: conic-gradient(from 0deg, transparent 0deg, currentColor 1deg, transparent 2deg);
+    animation: radar-scan 3s linear infinite;
+  }
+  
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full animate-pulse;
+  }
+  
+  .status-text {
+    @apply text-xs font-mono uppercase tracking-wider;
+  }
+  
+  .alert-card {
+    @apply bg-background-tertiary border border-border-secondary rounded-md p-4 transition-all hover:border-primary/50;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  }
+  
+  .status-indicator {
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .risk-meter {
+    @apply relative h-2 bg-background-tertiary rounded-full overflow-hidden;
+  }
+  
+  .risk-meter-fill {
+    @apply h-full transition-all duration-700 ease-out;
+  }
+  
+  /* Glow effects for alerts */
+  .alert-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+  
+  .alert-glow-critical {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  
+  .alert-glow-high {
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+  }
+  
+  /* Scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-background-secondary;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border-secondary rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  
+  .border-gradient {
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.5), transparent);
+    height: 1px;
+  }
+  
+  .glass-effect {
+    background: rgba(15, 20, 25, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Map Scanning Animation */
+  .animate-scan {
+    animation: scan 4s linear infinite;
+  }
+
+  /* Radar Gradients */
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+}
+
+@layer utilities {
+  @keyframes scan {
+    0% { transform: translateY(-100%) translateX(-50%); }
+    100% { transform: translateY(200vh) translateX(-50%); }
+  }
+}
