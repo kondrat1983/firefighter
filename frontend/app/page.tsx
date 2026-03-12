@@ -209,11 +209,13 @@ function GameWidget({ game }: { game: any }) {
 
 // ── Custom game widget (user-added, with initializing animation) ──────────
 function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id: string) => void }) {
-  const [phase, setPhase]       = useState<CustomGame['phase']>(game.phase);
-  const [health, setHealth]     = useState(game.health_score);
-  const [signals, setSignals]   = useState(game.signals_today);
+  const [phase, setPhase]     = useState<CustomGame['phase']>(game.phase);
+  const [health, setHealth]   = useState(game.health_score);
+  const [signals, setSignals] = useState(game.signals_today);
 
+  // Only animate if we don't already have real backend data
   useEffect(() => {
+    if (game.from_backend) return; // already resolved — skip animation
     if (phase === 'initializing') {
       const t1 = setTimeout(() => setPhase('scanning'), 1800);
       return () => clearTimeout(t1);
@@ -221,14 +223,24 @@ function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id:
     if (phase === 'scanning') {
       const t2 = setTimeout(() => {
         setPhase('monitoring');
-        setHealth(Math.floor(Math.random() * 20) + 78); // 78–97
+        setHealth(Math.floor(Math.random() * 20) + 78);
         setSignals(Math.floor(Math.random() * 120) + 20);
       }, 2200);
       return () => clearTimeout(t2);
     }
-  }, [phase]);
+  }, [phase, game.from_backend]);
 
   const isReady = phase === 'monitoring';
+  const breakdown = game.issue_breakdown ?? {};
+  const totalIssues = Object.values(breakdown).reduce((a, b) => a + b, 0) || 1;
+  const pct = (key: string) => {
+    const v = breakdown[key] ?? 0;
+    return v ? `${Math.round((v / totalIssues) * 100)}%` : '0%';
+  };
+
+  const alertCount  = game.active_alerts ?? 0;
+  const alertColor  = alertCount === 0 ? 'bg-risk-low' : alertCount <= 2 ? 'bg-risk-medium' : 'bg-risk-critical';
+  const healthColor = health >= 90 ? 'text-risk-low border-risk-low' : health >= 70 ? 'text-risk-medium border-risk-medium' : 'text-risk-high border-risk-high';
 
   return (
     <div className="game-widget relative group border border-primary/30 hover:border-primary/60 hover:scale-[1.01] transition-all duration-150">
@@ -257,12 +269,7 @@ function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id:
         </div>
 
         {/* Health ring or spinner */}
-        <div className={`health-radar ${
-          !isReady                  ? 'border-primary/40 text-primary' :
-          health >= 90              ? 'text-risk-low border-risk-low' :
-          health >= 70              ? 'text-risk-medium border-risk-medium' :
-                                      'text-risk-high border-risk-high'
-        }`}>
+        <div className={`health-radar ${!isReady ? 'border-primary/40 text-primary' : healthColor}`}>
           {!isReady ? (
             <span className="relative z-10 text-xs animate-pulse">···</span>
           ) : (
@@ -271,59 +278,52 @@ function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id:
         </div>
       </div>
 
-      {/* Progress / stats */}
+      {/* Progress bar while initializing */}
       {!isReady ? (
         <div className="space-y-2">
           <div className="h-1.5 bg-background-tertiary rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full bg-primary transition-all duration-1000 ${
-                phase === 'initializing' ? 'w-1/3' : 'w-2/3'
-              }`}
-            />
+            <div className={`h-full rounded-full bg-primary transition-all duration-1000 ${
+              phase === 'initializing' ? 'w-1/3' : 'w-2/3'
+            }`} />
           </div>
           <p className="text-xs text-foreground-muted">
-            {phase === 'initializing'
-              ? 'Connecting to data sources…'
-              : `Scanning ${game.platform} reviews & community feeds…`}
+            {phase === 'initializing' ? 'Connecting to data sources…' : `Scanning ${game.platform} reviews & community feeds…`}
           </p>
-          <p className="text-[10px] text-foreground-muted font-mono">
-            {game.platform} · App {game.app_id}
-          </p>
+          <p className="text-[10px] text-foreground-muted font-mono">{game.platform} · App {game.app_id}</p>
         </div>
       ) : (
         <>
+          {/* Alerts bar */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-2">
-              <div className="status-dot bg-risk-low"></div>
-              <span className="status-text text-foreground">0 ALERTS</span>
+              <div className={`status-dot ${alertColor}`}></div>
+              <span className="status-text text-foreground">{alertCount} ALERTS</span>
             </div>
             <div className="flex-1 h-px bg-border opacity-50"></div>
-            <div className="status-text text-foreground-secondary animate-data-flow">
-              {signals} SIG
-            </div>
+            <div className="status-text text-foreground-secondary animate-data-flow">{signals} SIG</div>
           </div>
+
+          {/* Issue breakdown — real data if available, zeros otherwise */}
           <div className="grid grid-cols-4 gap-2 text-xs">
-            <div className="text-center">
-              <div className="text-foreground-secondary">CRASH</div>
-              <div className="font-mono text-risk-low">0%</div>
-            </div>
-            <div className="text-center">
-              <div className="text-foreground-secondary">PROG</div>
-              <div className="font-mono text-risk-low">0%</div>
-            </div>
-            <div className="text-center">
-              <div className="text-foreground-secondary">CONN</div>
-              <div className="font-mono text-risk-low">0%</div>
-            </div>
-            <div className="text-center">
-              <div className="text-foreground-secondary">SENT</div>
-              <div className="font-mono text-risk-low">—</div>
-            </div>
+            {[['CRASH','crash'], ['PROG','progression'], ['CONN','connectivity'], ['SENT','sentiment']].map(([label, key]) => (
+              <div key={key} className="text-center">
+                <div className="text-foreground-secondary">{label}</div>
+                <div className={`font-mono ${breakdown[key] ? 'text-risk-medium' : 'text-risk-low'}`}>
+                  {game.from_backend ? pct(key) : '0%'}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="mt-3 pt-2 border-t border-border">
-            <p className="text-[10px] text-foreground-muted font-mono">
-              {game.platform} · App {game.app_id} · added just now
-            </p>
+
+          {/* Footer meta */}
+          <div className="mt-3 pt-2 border-t border-border space-y-0.5">
+            {game.review_score && game.review_score !== '—' && (
+              <p className="text-[10px] text-risk-low font-mono">⭐ {game.review_score}</p>
+            )}
+            {game.review_count !== undefined && (
+              <p className="text-[10px] text-foreground-muted">{game.review_count.toLocaleString()} Steam reviews analysed</p>
+            )}
+            <p className="text-[10px] text-foreground-muted font-mono">{game.platform} · App {game.app_id}</p>
           </div>
         </>
       )}

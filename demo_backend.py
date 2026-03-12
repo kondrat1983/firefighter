@@ -490,7 +490,7 @@ def get_live_streams_data():
 
 class FirefighterAPI(BaseHTTPRequestHandler):
     """Простой HTTP сервер для демо API"""
-    
+
     def do_OPTIONS(self):
         """Handle CORS preflight"""
         self.send_response(200)
@@ -498,6 +498,72 @@ class FirefighterAPI(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
+
+    def do_POST(self):
+        """Handle POST requests"""
+        parsed_path = urlparse(self.path)
+        length = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+
+        if parsed_path.path == '/api/games/add':
+            response = self.add_game(body)
+        else:
+            response = {"error": "Not found"}
+
+        self.wfile.write(json.dumps(response).encode())
+
+    def add_game(self, body: dict):
+        """Dynamically add a game to monitoring and immediately fetch its Steam data."""
+        name   = (body.get("name") or "").strip()
+        app_id = body.get("app_id")
+        if not name:
+            return {"error": "name is required"}
+        try:
+            app_id = int(app_id)
+        except (TypeError, ValueError):
+            return {"error": "app_id must be a number"}
+
+        # Register in global map (persists for process lifetime)
+        STEAM_APP_IDS[name] = app_id
+
+        # Fetch Steam data synchronously (runs in request thread — acceptable for demo)
+        data = get_steam_data_cached(app_id)
+
+        reviews    = data.get("reviews", [])
+        summary    = data.get("summary", {})
+        review_cnt = data.get("review_count", 0)
+
+        # Build quick alert summary for this game
+        from collections import defaultdict
+        groups: dict = defaultdict(list)
+        for rev in reviews:
+            key = rev["issue_type"]
+            groups[key].append(rev)
+
+        issue_breakdown = {k: len(v) for k, v in groups.items()}
+        alerts_found    = sum(1 for v in groups.values() if len(v) >= 2)
+
+        # Health score heuristic
+        positive_pct = summary.get("total_positive", 0) / max(summary.get("total_reviews", 1), 1)
+        health_score = max(40, min(99, int(positive_pct * 100)))
+
+        return {
+            "status":          "ok",
+            "name":            name,
+            "app_id":          app_id,
+            "health_score":    health_score,
+            "review_count":    review_cnt,
+            "review_score":    summary.get("review_score_desc", "—"),
+            "signals_today":   len(reviews),
+            "alerts_found":    alerts_found,
+            "issue_breakdown": issue_breakdown,
+            "steam_store_url": f"https://store.steampowered.com/app/{app_id}/",
+        }
     
     def do_GET(self):
         """Handle GET requests"""
