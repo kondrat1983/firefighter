@@ -992,13 +992,18 @@ export default function Dashboard() {
     <div className="min-h-screen p-6">
       {/* Header */}
       <header className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="flex items-center gap-6">
+          {/* Logo banner — stretches to fill available space */}
+          <div className="flex-1 relative flex items-center overflow-hidden" style={{ height: '96px' }}>
+            {/* Glow trail behind logo */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(to right, rgba(234,88,12,0.12) 0%, rgba(14,165,233,0.06) 40%, transparent 75%)' }}
+            />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/firefighter/logo-256.png"
+              src="/firefighter/logo-512.png"
               alt="Firefighter"
-              className="h-36 w-auto drop-shadow-[0_0_24px_rgba(234,88,12,0.6)] drop-shadow-[0_0_48px_rgba(14,165,233,0.3)]"
+              className="h-full w-auto relative z-10 drop-shadow-[0_0_20px_rgba(234,88,12,0.7)] drop-shadow-[0_0_40px_rgba(14,165,233,0.4)]"
             />
           </div>
           <div className="flex items-center gap-6">
