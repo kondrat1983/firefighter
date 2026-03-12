@@ -994,7 +994,7 @@ export default function Dashboard() {
       <header className="mb-8">
         <div className="flex items-center gap-6">
           {/* Logo banner */}
-          <div className="flex-1 relative flex items-center overflow-hidden" style={{ height: '88px' }}>
+          <div className="flex-1 relative flex items-center overflow-hidden" style={{ height: '96px' }}>
             {/* Glow trail that extends behind and to the right */}
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: 'linear-gradient(to right, rgba(234,88,12,0.15) 0%, rgba(234,88,12,0.05) 35%, rgba(14,165,233,0.04) 55%, transparent 80%)' }}
