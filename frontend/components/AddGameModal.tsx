@@ -62,8 +62,8 @@ export default function AddGameModal({ onAdd, onClose }: Props) {
 
     let backendData: any = null;
 
-    // Try to call the real backend
     if (platform === 'Steam') {
+      // 1) Try the local Firefighter backend first
       try {
         setLoadingMsg('Fetching Steam reviews…');
         const res = await fetch('/api/games/add', {
@@ -78,8 +78,38 @@ export default function AddGameModal({ onAdd, onClose }: Props) {
           else setLoadingMsg('Processing reviews…');
         }
       } catch {
-        // Backend not available (GitHub Pages demo mode) — fall through
         backendData = null;
+      }
+
+      // 2) Fallback: hit Steam's public review API directly from the browser
+      if (!backendData) {
+        try {
+          setLoadingMsg('Fetching from Steam…');
+          const steamRes = await fetch(
+            `https://store.steampowered.com/appreviews/${appId}?json=1&num_per_page=0&purchase_type=all&language=all`,
+            { signal: AbortSignal.timeout(10000) }
+          );
+          if (steamRes.ok) {
+            const steamJson = await steamRes.json();
+            const qs = steamJson?.query_summary;
+            if (qs && qs.total_reviews > 0) {
+              const posPct = qs.total_positive / qs.total_reviews;
+              backendData = {
+                status: 'ok',
+                health_score: Math.max(40, Math.min(99, Math.round(posPct * 100))),
+                review_count: qs.total_reviews,
+                review_score: qs.review_score_desc,
+                signals_today: Math.min(999, Math.floor(qs.total_reviews / 500)),
+                alerts_found: 0,
+                issue_breakdown: {},
+              };
+              setLoadingMsg('Processing Steam data…');
+            }
+          }
+        } catch {
+          // CORS or network error — fall through to demo animation
+          backendData = null;
+        }
       }
     }
 

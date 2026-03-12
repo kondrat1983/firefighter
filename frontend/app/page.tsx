@@ -243,10 +243,13 @@ function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id:
   const healthColor = health >= 90 ? 'text-risk-low border-risk-low' : health >= 70 ? 'text-risk-medium border-risk-medium' : 'text-risk-high border-risk-high';
 
   return (
-    <div className="game-widget relative group border border-primary/30 hover:border-primary/60 hover:scale-[1.01] transition-all duration-150">
+    <Link
+      href={`/games/custom/?id=${game.id}`}
+      className="game-widget block relative group border border-primary/30 hover:border-primary/60 hover:scale-[1.01] transition-all duration-150"
+    >
       {/* Remove button */}
       <button
-        onClick={() => onRemove(game.id)}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(game.id); }}
         className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-foreground-muted hover:text-risk-high p-0.5 rounded z-10"
         title="Remove game"
       >
@@ -327,7 +330,7 @@ function CustomGameWidget({ game, onRemove }: { game: CustomGame; onRemove: (id:
           </div>
         </>
       )}
-    </div>
+    </Link>
   );
 }
 
