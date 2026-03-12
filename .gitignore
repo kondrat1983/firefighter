@@ -21,6 +21,8 @@ eggs/
 .eggs/
 lib/
 lib64/
+# Un-ignore frontend source lib (overrides the lib/ rule above)
+!frontend/lib/
 parts/
 sdist/
 var/
