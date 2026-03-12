@@ -10,8 +10,10 @@ export const metadata: Metadata = {
   description: 'QA Intelligence tool that monitors community sources and detects early signs of live issues',
   keywords: ['QA', 'gaming', 'bug tracking', 'live monitoring', 'community intelligence'],
   authors: [{ name: 'Firefighter Team' }],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#0ea5e9',
+  icons: {
+    icon: '/firefighter/favicon.ico',
+    shortcut: '/firefighter/favicon.ico',
+  },
 };
 
 export default function RootLayout({

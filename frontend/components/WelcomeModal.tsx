@@ -1,6 +1,6 @@
 'use client';
 
-import { Flame, Zap, Globe, ChevronRight, X } from 'lucide-react';
+import { Zap, Globe, ChevronRight, X } from 'lucide-react';
 
 interface WelcomeModalProps {
   onClose: () => void;
@@ -27,9 +27,12 @@ export default function WelcomeModal({ onClose }: WelcomeModalProps) {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/15 border border-primary/30">
-            <Flame className="h-5 w-5 text-primary" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/firefighter/logo-64.png"
+            alt="Firefighter"
+            className="h-12 w-auto drop-shadow-[0_0_8px_rgba(14,165,233,0.4)]"
+          />
           <div>
             <h2 className="text-xl font-bold text-foreground">Welcome to Firefighter</h2>
             <p className="text-xs text-foreground-muted">QA Intelligence · Early Warning System</p>

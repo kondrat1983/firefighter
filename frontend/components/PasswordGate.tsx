@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
-import { Flame, Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 import WelcomeModal from './WelcomeModal';
 
 const STORAGE_KEY      = 'ff_demo_access';
@@ -53,10 +53,12 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/30 mb-4">
-            <Flame className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-shadow mb-1">Firefighter</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/firefighter/logo-128.png"
+            alt="Firefighter"
+            className="h-24 w-auto mx-auto mb-3 drop-shadow-[0_0_16px_rgba(14,165,233,0.5)]"
+          />
           <p className="text-sm text-foreground-muted">Demo access · QA Feedback</p>
         </div>
 
