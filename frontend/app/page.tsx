@@ -993,18 +993,16 @@ export default function Dashboard() {
       {/* Header */}
       <header className="mb-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/firefighter/logo-128.png"
+              src="/firefighter/logo-256.png"
               alt="Firefighter"
-              className="h-16 w-auto drop-shadow-[0_0_12px_rgba(14,165,233,0.4)]"
+              className="h-28 w-auto drop-shadow-[0_0_20px_rgba(234,88,12,0.5)] drop-shadow-[0_0_40px_rgba(14,165,233,0.3)]"
             />
-            <div>
-              <p className="text-foreground-secondary">
-                Mission Control • QA Intelligence Dashboard
-              </p>
-            </div>
+            <p className="text-xs text-foreground-muted tracking-widest uppercase">
+              Mission Control<br />QA Intelligence
+            </p>
           </div>
           <div className="flex items-center gap-6">
             <nav className="flex gap-4">

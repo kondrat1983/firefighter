@@ -55,9 +55,9 @@ export default function PasswordGate({ children }: { children: ReactNode }) {
         <div className="text-center mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/firefighter/logo-128.png"
+            src="/firefighter/logo-256.png"
             alt="Firefighter"
-            className="h-24 w-auto mx-auto mb-3 drop-shadow-[0_0_16px_rgba(14,165,233,0.5)]"
+            className="h-36 w-auto mx-auto mb-3 drop-shadow-[0_0_24px_rgba(234,88,12,0.6)] drop-shadow-[0_0_48px_rgba(14,165,233,0.3)]"
           />
           <p className="text-sm text-foreground-muted">Demo access · QA Feedback</p>
         </div>
